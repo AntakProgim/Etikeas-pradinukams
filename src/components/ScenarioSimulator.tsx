@@ -130,7 +130,7 @@ export const ScenarioSimulator: React.FC<ScenarioSimulatorProps> = ({
       </div>
 
       {/* Category Tabs */}
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+      <div className="flex flex-wrap items-center gap-2">
         {categories.map((cat) => (
           <button
             key={cat.id}
@@ -153,7 +153,7 @@ export const ScenarioSimulator: React.FC<ScenarioSimulatorProps> = ({
       </div>
 
       {/* Scenarios Mini-Nav List */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-1">
+      <div className="flex flex-wrap items-center gap-2">
         {filteredScenarios.map((s, idx) => {
           const isDone = completedScenarios.includes(s.id);
           const isCurrent = idx === safeIndex;

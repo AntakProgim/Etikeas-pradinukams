@@ -153,7 +153,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             <button
               type="button"
               onClick={() => scrollNav('left')}
-              className="absolute left-0 z-10 w-7 h-7 bg-white/95 border border-slate-300 shadow-md rounded-full flex items-center justify-center text-slate-700 hover:bg-amber-50 -ml-1 cursor-pointer transition-all"
+              className="md:hidden absolute left-0 z-10 w-7 h-7 bg-white/95 border border-slate-300 shadow-md rounded-full flex items-center justify-center text-slate-700 hover:bg-amber-50 -ml-1 cursor-pointer transition-all"
               aria-label="Slinkti kairėn"
             >
               <ChevronLeft className="w-4 h-4" />
@@ -163,7 +163,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           <nav 
             ref={navRef}
             onScroll={checkScroll}
-            className="flex items-center gap-1 sm:gap-1.5 overflow-x-auto pb-1 scrollbar-none scroll-smooth w-full px-1"
+            className="flex items-center gap-1 sm:gap-1.5 overflow-x-auto md:overflow-visible md:flex-wrap pb-1 scrollbar-none scroll-smooth w-full px-1"
           >
             {tabs.map((tab) => {
               const Icon = tab.icon;
@@ -195,7 +195,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             <button
               type="button"
               onClick={() => scrollNav('right')}
-              className="absolute right-0 z-10 w-7 h-7 bg-white/95 border border-slate-300 shadow-md rounded-full flex items-center justify-center text-slate-700 hover:bg-amber-50 -mr-1 cursor-pointer transition-all"
+              className="md:hidden absolute right-0 z-10 w-7 h-7 bg-white/95 border border-slate-300 shadow-md rounded-full flex items-center justify-center text-slate-700 hover:bg-amber-50 -mr-1 cursor-pointer transition-all"
               aria-label="Slinkti dešinėn"
             >
               <ChevronRight className="w-4 h-4" />

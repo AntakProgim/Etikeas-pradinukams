@@ -17,6 +17,129 @@ interface TableSettingGameProps {
   onUnlockBadge: (badgeId: string) => void;
 }
 
+const DinnerForkSvg: React.FC<{ className?: string }> = ({ className = 'w-8 h-8' }) => (
+  <svg
+    viewBox="0 0 64 64"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    className={className}
+    aria-label="Pietų šakutė"
+  >
+    <defs>
+      <linearGradient id="forkSilver" x1="20" y1="6" x2="44" y2="58" gradientUnits="userSpaceOnUse">
+        <stop offset="0%" stopColor="#E2E8F0" />
+        <stop offset="45%" stopColor="#94A3B8" />
+        <stop offset="100%" stopColor="#64748B" />
+      </linearGradient>
+    </defs>
+    {/* Four upright fork tines */}
+    <path
+      d="M23 7C23 5.9 23.9 5 25 5C26.1 5 27 5.9 27 7V21.5H28.5V7C28.5 5.9 29.4 5 30.5 5C31.6 5 32.5 5.9 32.5 7V21.5H34V7C34 5.9 34.9 5 36 5C37.1 5 38 5.9 38 7V21.5H39.5V7C39.5 5.9 40.4 5 41.5 5C42.6 5 43.5 5.9 43.5 7V22C43.5 26.8 40 30.2 35.8 31.2L35.3 31.3V34L36.2 53.5C36.3 56.6 34.5 59 32 59C29.5 59 27.7 56.6 27.8 53.5L28.7 34V31.3L28.2 31.2C24 30.2 20.5 26.8 20.5 22V7C20.5 5.9 21.4 5 22.5 5C22.7 5 22.9 5.05 23 5.1V7Z"
+      fill="url(#forkSilver)"
+      stroke="#475569"
+      strokeWidth="1.5"
+      strokeLinejoin="round"
+    />
+    {/* Subtle shine */}
+    <path d="M31 35V54" stroke="#F8FAFC" strokeWidth="1.5" strokeLinecap="round" opacity="0.7" />
+  </svg>
+);
+
+const DinnerKnifeSvg: React.FC<{ className?: string }> = ({ className = 'w-8 h-8' }) => (
+  <svg
+    viewBox="0 0 64 64"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    className={className}
+    aria-label="Pietų peilis"
+  >
+    <defs>
+      <linearGradient id="knifeBlade" x1="25" y1="6" x2="38" y2="34" gradientUnits="userSpaceOnUse">
+        <stop offset="0%" stopColor="#F8FAFC" />
+        <stop offset="55%" stopColor="#CBD5E1" />
+        <stop offset="100%" stopColor="#94A3B8" />
+      </linearGradient>
+      <linearGradient id="knifeHandle" x1="29" y1="33" x2="36" y2="59" gradientUnits="userSpaceOnUse">
+        <stop offset="0%" stopColor="#94A3B8" />
+        <stop offset="100%" stopColor="#475569" />
+      </linearGradient>
+    </defs>
+    {/* Classic rounded dining knife blade with cutting edge facing left */}
+    <path
+      d="M32 6C28.2 6 26 9.5 26 15.5C26 22.8 27.4 29.8 29.5 33.5H35.5V10C35.5 7.5 34.1 6 32 6Z"
+      fill="url(#knifeBlade)"
+      stroke="#475569"
+      strokeWidth="1.5"
+      strokeLinejoin="round"
+    />
+    {/* Bolster & Handle */}
+    <path
+      d="M29.2 33.5H35.8L36.5 53.5C36.6 56.6 34.7 59 32.5 59C30.3 59 28.4 56.6 28.5 53.5L29.2 33.5Z"
+      fill="url(#knifeHandle)"
+      stroke="#334155"
+      strokeWidth="1.5"
+      strokeLinejoin="round"
+    />
+    {/* Cutting edge highlight */}
+    <path d="M27.8 14C27.5 20.5 28.5 26.5 30 30.5" stroke="#FFFFFF" strokeWidth="1.2" strokeLinecap="round" opacity="0.8" />
+  </svg>
+);
+
+const ClothNapkinSvg: React.FC<{ className?: string }> = ({ className = 'w-8 h-8' }) => (
+  <svg
+    viewBox="0 0 64 64"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    className={className}
+    aria-label="Medvilninė servetėlė"
+  >
+    <defs>
+      <linearGradient id="napkinFront" x1="16" y1="10" x2="48" y2="54" gradientUnits="userSpaceOnUse">
+        <stop offset="0%" stopColor="#FFFDF9" />
+        <stop offset="100%" stopColor="#F5ECE1" />
+      </linearGradient>
+      <linearGradient id="napkinFold" x1="16" y1="24" x2="48" y2="54" gradientUnits="userSpaceOnUse">
+        <stop offset="0%" stopColor="#FDE8E8" />
+        <stop offset="100%" stopColor="#F8D2D2" />
+      </linearGradient>
+    </defs>
+    {/* Back layer of neatly folded cloth napkin */}
+    <rect
+      x="15"
+      y="9"
+      width="34"
+      height="46"
+      rx="4"
+      fill="url(#napkinFront)"
+      stroke="#CBD5E1"
+      strokeWidth="1.6"
+    />
+    {/* Diagonal folded front pocket */}
+    <path
+      d="M15 24L49 35V51C49 53.2 47.2 55 45 55H19C16.8 55 15 53.2 15 51V24Z"
+      fill="url(#napkinFold)"
+      stroke="#E11D48"
+      strokeOpacity="0.35"
+      strokeWidth="1.4"
+      strokeLinejoin="round"
+    />
+    {/* Crisp stitched border detail */}
+    <rect
+      x="19"
+      y="13"
+      width="26"
+      height="38"
+      rx="2"
+      stroke="#E11D48"
+      strokeOpacity="0.28"
+      strokeWidth="1.2"
+      strokeDasharray="3 2"
+    />
+    {/* Fold crease highlight */}
+    <path d="M16 24.5L48 35" stroke="#FFFFFF" strokeWidth="1.5" strokeLinecap="round" opacity="0.85" />
+  </svg>
+);
+
 export const TableSettingGame: React.FC<TableSettingGameProps> = ({ onAddStars, onUnlockBadge }) => {
   // Map slotId -> TableItemOption.id
   const [placements, setPlacements] = useState<Record<string, string>>({});
@@ -116,14 +239,14 @@ export const TableSettingGame: React.FC<TableSettingGameProps> = ({ onAddStars, 
       case 'fork':
         return (
           <div className="flex flex-col items-center justify-center py-2 text-slate-700">
-            <div className="text-3xl sm:text-4xl select-none">🍴</div>
+            <DinnerForkSvg className="w-10 h-14 sm:w-12 sm:h-16 drop-shadow-xs select-none" />
             <span className="text-[10px] font-bold text-slate-500 mt-1">Šakutė</span>
           </div>
         );
       case 'knife':
         return (
           <div className="flex flex-col items-center justify-center py-2 text-slate-700">
-            <div className="text-3xl sm:text-4xl select-none transform scale-x-[-1]">🔪</div>
+            <DinnerKnifeSvg className="w-10 h-14 sm:w-12 sm:h-16 drop-shadow-xs select-none" />
             <span className="text-[10px] font-bold text-slate-500 mt-1">Peilis (ašmenys į vidų)</span>
           </div>
         );
@@ -144,9 +267,7 @@ export const TableSettingGame: React.FC<TableSettingGameProps> = ({ onAddStars, 
       case 'napkin':
         return (
           <div className="flex flex-col items-center justify-center py-2">
-            <div className="w-10 h-16 sm:w-12 sm:h-20 bg-rose-100 border-2 border-rose-300 rounded-sm shadow-xs flex items-center justify-center">
-              <span className="text-lg">🧣</span>
-            </div>
+            <ClothNapkinSvg className="w-11 h-16 sm:w-12 sm:h-20 drop-shadow-xs select-none" />
             <span className="text-[10px] font-bold text-slate-500 mt-1">Servetėlė</span>
           </div>
         );
@@ -506,7 +627,21 @@ export const TableSettingGame: React.FC<TableSettingGameProps> = ({ onAddStars, 
                       : 'border-slate-200 hover:border-amber-300 hover:bg-amber-50/50 bg-white'
                   }`}
                 >
-                  <div className="text-2xl">{item.id === 'plate' ? '🍽️' : item.id === 'fork' ? '🍴' : item.id === 'knife' ? '🔪' : item.id === 'spoon' ? '🥄' : item.id === 'glass' ? '🥛' : '🧣'}</div>
+                  <div className="h-8 flex items-center justify-center text-2xl">
+                    {item.id === 'plate' ? (
+                      '🍽️'
+                    ) : item.id === 'fork' ? (
+                      <DinnerForkSvg className="w-8 h-8" />
+                    ) : item.id === 'knife' ? (
+                      <DinnerKnifeSvg className="w-8 h-8" />
+                    ) : item.id === 'spoon' ? (
+                      '🥄'
+                    ) : item.id === 'glass' ? (
+                      '🥛'
+                    ) : (
+                      <ClothNapkinSvg className="w-8 h-8" />
+                    )}
+                  </div>
                   <span className="text-xs font-bold text-slate-700">{item.name}</span>
                 </button>
               );
