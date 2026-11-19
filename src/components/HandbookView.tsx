@@ -308,7 +308,9 @@ export const HandbookView: React.FC<HandbookViewProps> = ({
                     Pamokėlės iliustracija
                   </span>
                   <p className="text-xs sm:text-sm text-slate-700 font-medium leading-relaxed">
-                    {currentChapter.subtitle} — praktikuokis kiekvieną dieną ir tapk tikru etiketo meistru!
+                    {currentChapter.id === 'respect'
+                      ? 'Laikykis auksinės taisyklės — praktikuokis kiekvieną dieną ir tapk tikru etiketo žinovu!'
+                      : `${currentChapter.subtitle} — praktikuokis kiekvieną dieną ir tapk tikru etiketo žinovu!`}
                   </p>
                 </div>
               </div>

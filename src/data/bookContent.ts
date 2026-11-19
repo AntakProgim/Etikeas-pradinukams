@@ -3,8 +3,8 @@ import { ChapterSection } from '../types';
 export const BOOK_SECTIONS: ChapterSection[] = [
   {
     id: 'respect',
-    title: '1. Pagarba – tinkamo elgesio širdis',
-    subtitle: 'Auksinė taisyklė ir pagarbus elgesys su savimi bei kitais',
+    title: '1. Mandagumas – tinkamo elgesio širdis',
+    subtitle: 'Auksinė taisyklė - elkis su kitais taip, kaip norėtum, kad elgtųsi su tavimi.',
     icon: 'HeartHandshake',
     color: 'emerald',
     badgeId: 'respect_master',

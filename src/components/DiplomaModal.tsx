@@ -1,26 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import {
-  X,
-  Printer,
-  Award,
-  Mail,
-  Send,
-  CheckCircle2,
-  AlertCircle,
-  LogOut,
-  Loader2,
-  ShieldCheck,
-} from 'lucide-react';
-import { User } from 'firebase/auth';
+import { X, Printer, Award, Download, CheckCircle2 } from 'lucide-react';
 import { sounds } from '../utils/audio';
-import {
-  initAuth,
-  googleSignIn,
-  getAccessToken,
-  logout,
-  sendDiplomaEmail,
-  GmailAuthError,
-} from '../utils/googleAuth';
 
 interface DiplomaModalProps {
   isOpen: boolean;
@@ -31,6 +11,35 @@ interface DiplomaModalProps {
 
 const GRADES = ['1', '2', '3', '4'] as const;
 const CLASS_LETTERS = ['k', 'l', 'm', 'n', 'o'] as const;
+
+function wrapCanvasText(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  x: number,
+  y: number,
+  maxWidth: number,
+  lineHeight: number
+): number {
+  const words = text.split(' ');
+  let line = '';
+  let currentY = y;
+
+  for (let i = 0; i < words.length; i++) {
+    const testLine = line ? `${line} ${words[i]}` : words[i];
+    const metrics = ctx.measureText(testLine);
+    if (metrics.width > maxWidth && line) {
+      ctx.fillText(line, x, currentY);
+      line = words[i];
+      currentY += lineHeight;
+    } else {
+      line = testLine;
+    }
+  }
+  if (line) {
+    ctx.fillText(line, x, currentY);
+  }
+  return currentY;
+}
 
 export const DiplomaModal: React.FC<DiplomaModalProps> = ({
   isOpen,
@@ -47,8 +56,11 @@ export const DiplomaModal: React.FC<DiplomaModalProps> = ({
   const [classLetter, setClassLetter] = useState<string>(() => {
     return localStorage.getItem('etiquette_student_letter') ?? 'k';
   });
+  const [downloadedNotice, setDownloadedNotice] = useState(false);
+
   const schoolClass = `${grade}${classLetter} klasė`;
   const todayDate = new Date().toLocaleDateString('lt-LT');
+  const displayStudentName = studentName.trim() || 'Šaunus Mokinys';
 
   useEffect(() => {
     localStorage.setItem('etiquette_student_name', studentName);
@@ -62,31 +74,6 @@ export const DiplomaModal: React.FC<DiplomaModalProps> = ({
     localStorage.setItem('etiquette_student_letter', classLetter);
   }, [classLetter]);
 
-  // Email & Google Auth state
-  const [showEmailPanel, setShowEmailPanel] = useState(false);
-  const [recipientEmail, setRecipientEmail] = useState('');
-  const [user, setUser] = useState<User | null>(null);
-  const [needsAuth, setNeedsAuth] = useState<boolean>(() => !getAccessToken());
-  const [isLoggingIn, setIsLoggingIn] = useState(false);
-  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
-  const [isSending, setIsSending] = useState(false);
-  const [sendSuccessEmail, setSendSuccessEmail] = useState<string | null>(null);
-  const [emailError, setEmailError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const unsubscribe = initAuth(
-      (signedInUser) => {
-        setUser(signedInUser);
-        setNeedsAuth(false);
-      },
-      (firebaseUser) => {
-        setUser(firebaseUser);
-        setNeedsAuth(true);
-      }
-    );
-    return () => unsubscribe();
-  }, []);
-
   if (!isOpen) return null;
 
   const handlePrint = () => {
@@ -94,95 +81,184 @@ export const DiplomaModal: React.FC<DiplomaModalProps> = ({
     window.print();
   };
 
-  const handleGoogleLogin = async () => {
-    sounds.playPop();
-    setIsLoggingIn(true);
-    setEmailError(null);
-    try {
-      const result = await googleSignIn();
-      setUser(result.user);
-      setNeedsAuth(false);
-      if (!recipientEmail && result.user.email) {
-        setRecipientEmail(result.user.email);
-      }
-    } catch (err: unknown) {
-      const message =
-        err instanceof Error ? err.message : 'Nepavyko prisijungti prie „Google“ paskyros.';
-      setEmailError(message);
-    } finally {
-      setIsLoggingIn(false);
-    }
-  };
+  const handleDownloadDiploma = () => {
+    sounds.playFanfare();
 
-  const handleLogout = async () => {
-    sounds.playPop();
-    await logout();
-    setUser(null);
-    setNeedsAuth(true);
-    setSendSuccessEmail(null);
-    setEmailError(null);
-    setShowConfirmDialog(false);
-  };
+    const width = 1400;
+    const height = 1000;
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
 
-  const handleRequestSend = (e: React.FormEvent) => {
-    e.preventDefault();
-    sounds.playPop();
-    setEmailError(null);
-    setSendSuccessEmail(null);
+    // Warm parchment background gradient
+    const bgGrad = ctx.createRadialGradient(
+      width / 2,
+      height / 2,
+      100,
+      width / 2,
+      height / 2,
+      width * 0.75
+    );
+    bgGrad.addColorStop(0, '#FFFDF5');
+    bgGrad.addColorStop(0.65, '#FEF9E7');
+    bgGrad.addColorStop(1, '#FDECC8');
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, width, height);
 
-    const trimmedEmail = recipientEmail.trim();
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
-      setEmailError('Įvesk taisyklingą gavėjo el. pašto adresą.');
-      return;
-    }
+    // Double golden border
+    ctx.strokeStyle = '#F59E0B';
+    ctx.lineWidth = 10;
+    ctx.strokeRect(38, 38, width - 76, height - 76);
 
-    const token = getAccessToken();
-    if (!token) {
-      setNeedsAuth(true);
-      setEmailError('Pirmiausia prisijunkite per „Google“, kad galėtumėte siųsti laišką.');
-      return;
-    }
+    ctx.strokeStyle = '#D97706';
+    ctx.lineWidth = 3;
+    ctx.strokeRect(56, 56, width - 112, height - 112);
 
-    setShowConfirmDialog(true);
-  };
+    // Corner flourishes
+    ctx.fillStyle = '#F59E0B';
+    ctx.font = '44px Georgia, serif';
+    ctx.textAlign = 'left';
+    ctx.fillText('❧', 76, 108);
+    ctx.textAlign = 'right';
+    ctx.fillText('❧', width - 76, 108);
+    ctx.textAlign = 'left';
+    ctx.fillText('❧', 76, height - 76);
+    ctx.textAlign = 'right';
+    ctx.fillText('❧', width - 76, height - 76);
 
-  const handleConfirmSend = async () => {
-    const token = getAccessToken();
-    if (!token) {
-      setShowConfirmDialog(false);
-      setNeedsAuth(true);
-      setEmailError('Reikia prisijungti per „Google“ iš naujo.');
-      return;
-    }
+    // Crown badge circle
+    ctx.beginPath();
+    ctx.arc(width / 2, 165, 48, 0, Math.PI * 2);
+    const badgeGrad = ctx.createLinearGradient(width / 2 - 48, 117, width / 2 + 48, 213);
+    badgeGrad.addColorStop(0, '#FBBF24');
+    badgeGrad.addColorStop(1, '#FDE047');
+    ctx.fillStyle = badgeGrad;
+    ctx.fill();
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = '#D97706';
+    ctx.stroke();
 
-    setIsSending(true);
-    setEmailError(null);
-    try {
-      const targetEmail = recipientEmail.trim();
-      await sendDiplomaEmail({
-        accessToken: token,
-        toEmail: targetEmail,
-        studentName: studentName.trim() || 'Šaunus Mokinys',
-        schoolClass,
-        stars,
-        unlockedBadgeCount,
-        date: todayDate,
-      });
-      sounds.playFanfare();
-      setShowConfirmDialog(false);
-      setSendSuccessEmail(targetEmail);
-    } catch (err: unknown) {
-      sounds.playIncorrect();
-      setShowConfirmDialog(false);
-      if (err instanceof GmailAuthError) {
-        setNeedsAuth(true);
-      }
-      setEmailError(
-        err instanceof Error ? err.message : 'Nepavyko išsiųsti diplomo el. paštu.'
-      );
-    } finally {
-      setIsSending(false);
-    }
+    ctx.textAlign = 'center';
+    ctx.font = '48px "Apple Color Emoji", "Segoe UI Emoji", sans-serif';
+    ctx.fillText('👑', width / 2, 182);
+
+    // Header text
+    ctx.fillStyle = '#92400E';
+    ctx.font = '700 22px "Plus Jakarta Sans", Arial, sans-serif';
+    ctx.fillText('MANDAGAUS ELGESIO MOKYKLĖLĖ', width / 2, 260);
+
+    ctx.fillStyle = '#0F172A';
+    ctx.font = '800 66px "Outfit", "Plus Jakarta Sans", Arial, sans-serif';
+    ctx.fillText('ETIKETO DIPLOMAS', width / 2, 336);
+
+    ctx.fillStyle = '#B45309';
+    ctx.font = '600 22px "Plus Jakarta Sans", Arial, sans-serif';
+    ctx.fillText(
+      'Pagal Bob & Emilie Barnes knygą „Good Manners for Today\'s Kids“',
+      width / 2,
+      380
+    );
+
+    // Student section
+    ctx.fillStyle = '#475569';
+    ctx.font = '500 24px "Plus Jakarta Sans", Arial, sans-serif';
+    ctx.fillText('Šis garbingas diplomas patvirtina, kad', width / 2, 452);
+
+    ctx.fillStyle = '#78350F';
+    ctx.font = '800 50px "Outfit", "Plus Jakarta Sans", Arial, sans-serif';
+    ctx.fillText(`${displayStudentName} (${schoolClass})`, width / 2, 524);
+
+    // Dashed underline under name
+    ctx.save();
+    ctx.setLineDash([10, 8]);
+    ctx.strokeStyle = '#F59E0B';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(width / 2 - 340, 548);
+    ctx.lineTo(width / 2 + 340, 548);
+    ctx.stroke();
+    ctx.restore();
+
+    // Description
+    ctx.fillStyle = '#334155';
+    ctx.font = '500 24px "Plus Jakarta Sans", Arial, sans-serif';
+    const nextY = wrapCanvasText(
+      ctx,
+      'sėkmingai išmoko stalo etiketo taisyklių, garbingo žaidimo, svetingumo, švaros bei mandagaus bendravimo principų ir yra oficialiai paskelbtas',
+      width / 2,
+      606,
+      980,
+      36
+    );
+
+    ctx.fillStyle = '#78350F';
+    ctx.font = '800 28px "Outfit", "Plus Jakarta Sans", Arial, sans-serif';
+    ctx.fillText('🌟 MANDAGUMO IR ETIKETO ČEMPIONU 🌟', width / 2, nextY + 54);
+
+    // Stats box
+    ctx.fillStyle = '#78350F';
+    ctx.font = '800 32px "Outfit", Arial, sans-serif';
+    ctx.fillText(`${stars} ⭐`, width / 2 - 150, 775);
+    ctx.fillText(`${unlockedBadgeCount} / 8 🏆`, width / 2 + 150, 775);
+
+    ctx.fillStyle = '#64748B';
+    ctx.font = '600 18px "Plus Jakarta Sans", Arial, sans-serif';
+    ctx.fillText('Etiketo žvaigždutės', width / 2 - 150, 806);
+    ctx.fillText('Pelnyti ženkleliai', width / 2 + 150, 806);
+
+    ctx.strokeStyle = '#FCD34D';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(width / 2, 745);
+    ctx.lineTo(width / 2, 812);
+    ctx.stroke();
+
+    // Footer divider
+    ctx.strokeStyle = '#FCD34D';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(110, 845);
+    ctx.lineTo(width - 110, 845);
+    ctx.stroke();
+
+    // Date & signature
+    ctx.textAlign = 'left';
+    ctx.fillStyle = '#94A3B8';
+    ctx.font = '700 18px "Plus Jakarta Sans", Arial, sans-serif';
+    ctx.fillText('DATA', 110, 882);
+    ctx.fillStyle = '#1E293B';
+    ctx.font = '700 24px "Plus Jakarta Sans", Arial, sans-serif';
+    ctx.fillText(todayDate, 110, 916);
+
+    ctx.textAlign = 'right';
+    ctx.fillStyle = '#94A3B8';
+    ctx.font = '700 18px "Plus Jakarta Sans", Arial, sans-serif';
+    ctx.fillText('PATVIRTINO', width - 110, 882);
+    ctx.fillStyle = '#92400E';
+    ctx.font = '700 24px "Outfit", "Plus Jakarta Sans", Arial, sans-serif';
+    ctx.fillText('🦉 Išmintingoji Etiketo Pelėda', width - 110, 916);
+
+    // Trigger file download
+    const safeFileName = displayStudentName
+      .toLowerCase()
+      .replace(/[^a-z0-9ąčęėįšųūž_-]+/gi, '_')
+      .replace(/^_+|_+$/g, '') || 'mokinys';
+
+    canvas.toBlob((blob) => {
+      if (!blob) return;
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `etiketo_diplomas_${safeFileName}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      setDownloadedNotice(true);
+      setTimeout(() => setDownloadedNotice(false), 4000);
+    }, 'image/png');
   };
 
   return (
@@ -207,242 +283,116 @@ export const DiplomaModal: React.FC<DiplomaModalProps> = ({
         </div>
 
         {/* Edit Form Bar (Hidden on print) */}
-        <div className="p-4 bg-amber-50/70 border-b border-amber-200/80 flex flex-wrap items-end gap-3 print:hidden">
-          <div className="flex-1 min-w-[160px]">
-            <label
-              htmlFor="diploma-student-name"
-              className="text-[10px] font-bold text-slate-600 uppercase block mb-1"
-            >
-              Vardas
-            </label>
-            <div className="relative">
-              <input
-                id="diploma-student-name"
-                type="text"
-                value={studentName}
-                onChange={(e) => setStudentName(e.target.value)}
-                placeholder="Įrašyk vaiko vardą..."
-                maxLength={40}
-                className="w-full px-3 py-1.5 pr-8 bg-white border border-amber-300 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-400"
-              />
-              {studentName && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    sounds.playPop();
-                    setStudentName('');
-                  }}
-                  aria-label="Išvalyti vardą"
-                  className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 rounded-md text-slate-400 hover:text-slate-600 hover:bg-amber-100 cursor-pointer"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              )}
-            </div>
-          </div>
-
-          <div className="w-20">
-            <label htmlFor="diploma-grade" className="text-[10px] font-bold text-slate-500 uppercase block mb-1">
-              Klasė
-            </label>
-            <select
-              id="diploma-grade"
-              value={grade}
-              onChange={(e) => {
-                sounds.playPop();
-                setGrade(e.target.value);
-              }}
-              className="w-full px-2.5 py-1.5 bg-white border border-amber-300 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-400 cursor-pointer"
-            >
-              {GRADES.map((g) => (
-                <option key={g} value={g}>
-                  {g} kl.
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="w-20">
-            <label htmlFor="diploma-letter" className="text-[10px] font-bold text-slate-500 uppercase block mb-1">
-              Raidė
-            </label>
-            <select
-              id="diploma-letter"
-              value={classLetter}
-              onChange={(e) => {
-                sounds.playPop();
-                setClassLetter(e.target.value);
-              }}
-              className="w-full px-2.5 py-1.5 bg-white border border-amber-300 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-400 cursor-pointer"
-            >
-              {CLASS_LETTERS.map((letter) => (
-                <option key={letter} value={letter}>
-                  {letter}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              onClick={handlePrint}
-              className="px-3.5 py-2 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-white rounded-xl font-heading font-bold text-xs flex items-center gap-1.5 shadow-xs cursor-pointer transition-transform hover:scale-102"
-            >
-              <Printer className="w-4 h-4" />
-              <span>Spausdinti</span>
-            </button>
-
-            <button
-              id="btn-toggle-email-diploma"
-              onClick={() => {
-                sounds.playPop();
-                setShowEmailPanel((prev) => !prev);
-                setEmailError(null);
-              }}
-              className={`px-3.5 py-2 rounded-xl font-heading font-bold text-xs flex items-center gap-1.5 shadow-xs cursor-pointer transition-all ${
-                showEmailPanel
-                  ? 'bg-indigo-700 text-white'
-                  : 'bg-indigo-600 hover:bg-indigo-700 text-white'
-              }`}
-            >
-              <Mail className="w-4 h-4" />
-              <span>Siųsti el. paštu</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Email Sending Drawer (Hidden on print) */}
-        {showEmailPanel && (
-          <div className="p-4 bg-indigo-50/80 border-b border-indigo-200 space-y-3 print:hidden animate-in fade-in duration-200">
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2 text-indigo-950 font-heading font-bold text-xs sm:text-sm">
-                <Mail className="w-4 h-4 text-indigo-600" />
-                <span>Išsiųsti diplomą per „Gmail“</span>
-              </div>
-              {user && !needsAuth && (
-                <button
-                  type="button"
-                  onClick={handleLogout}
-                  className="text-[11px] font-semibold text-slate-600 hover:text-rose-600 flex items-center gap-1 cursor-pointer transition-colors"
-                >
-                  <LogOut className="w-3.5 h-3.5" />
-                  <span>Atsijungti ({user.email})</span>
-                </button>
-              )}
-            </div>
-
-            {needsAuth || !user ? (
-              <div className="bg-white rounded-2xl p-4 border border-indigo-200 flex flex-col sm:flex-row items-center justify-between gap-3">
-                <div className="text-xs text-slate-600 space-y-0.5 text-center sm:text-left">
-                  <p className="font-bold text-slate-800">Reikalingas „Google“ prisijungimas</p>
-                  <p>Prisijunkite savo paskyra, kad galėtumėte išsiųsti šį diplomą el. paštu.</p>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={handleGoogleLogin}
-                  disabled={isLoggingIn}
-                  className="gsi-material-button shrink-0"
-                >
-                  <div className="gsi-material-button-content-wrapper">
-                    <div className="gsi-material-button-icon">
-                      <svg
-                        version="1.1"
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 48 48"
-                        className="block"
-                      >
-                        <path
-                          fill="#EA4335"
-                          d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"
-                        />
-                        <path
-                          fill="#4285F4"
-                          d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"
-                        />
-                        <path
-                          fill="#FBBC05"
-                          d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"
-                        />
-                        <path
-                          fill="#34A853"
-                          d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"
-                        />
-                        <path fill="none" d="M0 0h48v48H0z" />
-                      </svg>
-                    </div>
-                    <span className="gsi-material-button-contents">
-                      {isLoggingIn ? 'Jungiamasi...' : 'Prisijungti su Google'}
-                    </span>
-                  </div>
-                </button>
-              </div>
-            ) : (
-              <form onSubmit={handleRequestSend} className="flex flex-col sm:flex-row items-stretch sm:items-end gap-2.5">
-                <div className="flex-1">
-                  <label htmlFor="diploma-recipient-email" className="text-[10px] font-bold text-slate-600 uppercase block mb-1">
-                    Gavėjo el. pašto adresas
-                  </label>
-                  <input
-                    id="diploma-recipient-email"
-                    type="email"
-                    required
-                    value={recipientEmail}
-                    onChange={(e) => {
-                      setRecipientEmail(e.target.value);
-                      setEmailError(null);
-                      setSendSuccessEmail(null);
-                    }}
-                    placeholder="pvz., teveliai@pastas.lt arba mokytoja@mokykla.lt"
-                    className="w-full px-3 py-2 bg-white border border-indigo-300 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-400"
-                  />
-                </div>
-
-                {user.email && recipientEmail !== user.email && (
+        <div className="p-4 bg-amber-50/70 border-b border-amber-200/80 space-y-3 print:hidden">
+          <div className="flex flex-wrap items-end gap-3">
+            <div className="flex-1 min-w-[160px]">
+              <label
+                htmlFor="diploma-student-name"
+                className="text-[10px] font-bold text-slate-600 uppercase block mb-1"
+              >
+                Vardas
+              </label>
+              <div className="relative">
+                <input
+                  id="diploma-student-name"
+                  type="text"
+                  value={studentName}
+                  onChange={(e) => setStudentName(e.target.value)}
+                  placeholder="Įrašyk vaiko vardą..."
+                  maxLength={40}
+                  className="w-full px-3 py-1.5 pr-8 bg-white border border-amber-300 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                />
+                {studentName && (
                   <button
                     type="button"
                     onClick={() => {
                       sounds.playPop();
-                      setRecipientEmail(user.email || '');
-                      setEmailError(null);
+                      setStudentName('');
                     }}
-                    className="px-3 py-2 bg-white border border-indigo-200 hover:bg-indigo-100 text-indigo-700 rounded-xl text-xs font-semibold cursor-pointer transition-colors"
+                    aria-label="Išvalyti vardą"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 rounded-md text-slate-400 hover:text-slate-600 hover:bg-amber-100 cursor-pointer"
                   >
-                    Siųsti sau
+                    <X className="w-3.5 h-3.5" />
                   </button>
                 )}
-
-                <button
-                  type="submit"
-                  disabled={!recipientEmail.trim() || isSending}
-                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 text-white rounded-xl font-heading font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs cursor-pointer disabled:cursor-not-allowed transition-colors"
-                >
-                  <Send className="w-3.5 h-3.5" />
-                  <span>Išsiųsti diplomą</span>
-                </button>
-              </form>
-            )}
-
-            {emailError && (
-              <div className="p-2.5 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-800 flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
-                <span>{emailError}</span>
               </div>
-            )}
+            </div>
 
-            {sendSuccessEmail && (
-              <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-800 flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                <span>
-                  Diplomas sėkmingai išsiųstas adresu <strong>{sendSuccessEmail}</strong>!
-                </span>
-              </div>
-            )}
+            <div className="w-20">
+              <label htmlFor="diploma-grade" className="text-[10px] font-bold text-slate-500 uppercase block mb-1">
+                Klasė
+              </label>
+              <select
+                id="diploma-grade"
+                value={grade}
+                onChange={(e) => {
+                  sounds.playPop();
+                  setGrade(e.target.value);
+                }}
+                className="w-full px-2.5 py-1.5 bg-white border border-amber-300 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-400 cursor-pointer"
+              >
+                {GRADES.map((g) => (
+                  <option key={g} value={g}>
+                    {g} kl.
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="w-20">
+              <label htmlFor="diploma-letter" className="text-[10px] font-bold text-slate-500 uppercase block mb-1">
+                Raidė
+              </label>
+              <select
+                id="diploma-letter"
+                value={classLetter}
+                onChange={(e) => {
+                  sounds.playPop();
+                  setClassLetter(e.target.value);
+                }}
+                className="w-full px-2.5 py-1.5 bg-white border border-amber-300 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-400 cursor-pointer"
+              >
+                {CLASS_LETTERS.map((letter) => (
+                  <option key={letter} value={letter}>
+                    {letter}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                id="btn-download-diploma"
+                type="button"
+                onClick={handleDownloadDiploma}
+                className="px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl font-heading font-bold text-xs flex items-center gap-1.5 shadow-xs cursor-pointer transition-transform hover:scale-102"
+              >
+                <Download className="w-4 h-4" />
+                <span>Atsisiųsti diplomą</span>
+              </button>
+
+              <button
+                id="btn-print-diploma"
+                type="button"
+                onClick={handlePrint}
+                className="px-3.5 py-2 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-white rounded-xl font-heading font-bold text-xs flex items-center gap-1.5 shadow-xs cursor-pointer transition-transform hover:scale-102"
+              >
+                <Printer className="w-4 h-4" />
+                <span>Spausdinti</span>
+              </button>
+            </div>
           </div>
-        )}
+
+          {downloadedNotice && (
+            <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-800 flex items-center gap-2 animate-in fade-in duration-150">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>Diplomas sėkmingai paruoštas ir atsisiųstas kaip paveikslėlis!</span>
+            </div>
+          )}
+        </div>
 
         {/* THE DIPLOMA CERTIFICATE (Printable Area) */}
-        <div 
+        <div
           id="diploma-certificate"
           className="p-8 sm:p-12 bg-radial from-amber-50/90 via-yellow-50/50 to-amber-100/40 border-8 border-double border-amber-400 m-4 sm:m-6 rounded-2xl text-center space-y-6 relative overflow-hidden shadow-inner"
         >
@@ -473,14 +423,14 @@ export const DiplomaModal: React.FC<DiplomaModalProps> = ({
             <p className="text-xs text-slate-600">Šis garbingas diplomas patvirtina, kad</p>
             <div className="border-b-2 border-dashed border-amber-400 pb-1 max-w-sm mx-auto">
               <span className="text-xl sm:text-2xl font-heading font-extrabold text-amber-900">
-                {studentName || 'Šaunus Mokinys'}
+                {displayStudentName}
               </span>
               {schoolClass && (
                 <span className="text-xs text-slate-500 ml-2">({schoolClass})</span>
               )}
             </div>
             <p className="text-xs text-slate-700 max-w-md mx-auto leading-relaxed pt-2">
-              sėkmingai išmoko stalo etiketo taisyklių, garbingo žaidimo, svetingumo, švaros bei mandagaus bendravimo principų ir yra oficialiai paskelbtas 
+              sėkmingai išmoko stalo etiketo taisyklių, garbingo žaidimo, svetingumo, švaros bei mandagaus bendravimo principų ir yra oficialiai paskelbtas
               <strong className="text-amber-900 block pt-1">🌟 MANDAGUMO IR ETIKETO ČEMPIONU 🌟</strong>
             </p>
           </div>
@@ -510,74 +460,6 @@ export const DiplomaModal: React.FC<DiplomaModalProps> = ({
             </div>
           </div>
         </div>
-
-        {/* Mandatory User Confirmation Dialog before sending email */}
-        {showConfirmDialog && (
-          <div className="fixed inset-0 z-60 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 print:hidden">
-            <div className="bg-white rounded-2xl max-w-md w-full p-5 shadow-2xl border border-indigo-200 space-y-4 animate-in zoom-in-95 duration-150">
-              <div className="flex items-start gap-3">
-                <div className="w-10 h-10 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center shrink-0">
-                  <ShieldCheck className="w-5 h-5" />
-                </div>
-                <div className="space-y-1">
-                  <h3 className="font-heading font-extrabold text-base text-slate-900">
-                    Patvirtinkite diplomo siuntimą
-                  </h3>
-                  <p className="text-xs text-slate-600">
-                    Ar tikrai norite išsiųsti šį etiketo diplomą el. paštu per savo „Gmail“ paskyrą?
-                  </p>
-                </div>
-              </div>
-
-              <div className="bg-slate-50 rounded-xl p-3 border border-slate-200 text-xs space-y-1.5 text-slate-700">
-                <div>
-                  <span className="font-bold text-slate-500">Gavėjas</span>{' '}
-                  <strong className="text-slate-900">{recipientEmail.trim()}</strong>
-                </div>
-                <div>
-                  <span className="font-bold text-slate-500">Mokinys</span>{' '}
-                  <strong>{studentName.trim() || 'Šaunus Mokinys'}</strong> ({schoolClass})
-                </div>
-                <div>
-                  <span className="font-bold text-slate-500">Siuntėjas</span>{' '}
-                  <span>{user?.email}</span>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-end gap-2 pt-1">
-                <button
-                  type="button"
-                  disabled={isSending}
-                  onClick={() => {
-                    sounds.playPop();
-                    setShowConfirmDialog(false);
-                  }}
-                  className="px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold cursor-pointer"
-                >
-                  Atšaukti
-                </button>
-                <button
-                  type="button"
-                  disabled={isSending}
-                  onClick={handleConfirmSend}
-                  className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white text-xs font-heading font-bold flex items-center gap-1.5 cursor-pointer"
-                >
-                  {isSending ? (
-                    <>
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      <span>Siunčiama...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Send className="w-3.5 h-3.5" />
-                      <span>Patvirtinti ir išsiųsti</span>
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
