@@ -1,18 +1,23 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { 
-  Bot, 
   Send, 
-  Sparkles, 
-  Lightbulb, 
   CheckCircle2, 
-  HelpCircle,
-  MessageCircle,
-  Loader2
+  Loader2,
+  AlertCircle,
+  RotateCcw,
+  User
 } from 'lucide-react';
 import { sounds, speech } from '../utils/audio';
 
 interface OwlAdvisorProps {
   onAddStars: (count: number) => void;
+}
+
+interface OwlMessage {
+  id: string;
+  question?: string;
+  answer: string;
+  tips: string[];
 }
 
 const QUICK_PROMPTS = [
@@ -24,28 +29,44 @@ const QUICK_PROMPTS = [
   'Kaip mandagiai pasakyti „Ačiū“ už dovaną, kuri man nelabai patinka?'
 ];
 
+const INITIAL_MESSAGE: OwlMessage = {
+  id: 'welcome',
+  answer: 'Labas! Aš esu Išmintingoji Etiketo Pelėda 🦉. Užduok man bet kokį klausimą apie tai, kaip mandagiai ir gražiai elgtis mokykloje, namuose, prie stalo ar žaidžiant su draugais!',
+  tips: [
+    'Visada atsimink Auksinę taisyklę: elkis taip, kaip norėtum, kad elgtųsi su tavimi!',
+    'Šypsena ir geri žodžiai atveria visas duris.',
+    'Pasirink vieną iš paruoštų klausimų apačioje arba įrašyk savo!'
+  ]
+};
+
 export const OwlAdvisor: React.FC<OwlAdvisorProps> = ({ onAddStars }) => {
   const [question, setQuestion] = useState('');
-
-
   const [loading, setLoading] = useState(false);
-  const [response, setResponse] = useState<{ answer: string; tips: string[] } | null>({
-    answer: 'Labas! Aš esu Išmintingoji Etiketo Pelėda 🦉. Užduok man bet kokį klausimą apie tai, kaip mandagiai ir gražiai elgtis mokykloje, namuose, prie stalo ar žaidžiant su draugais!',
-    tips: [
-      'Visada atsimink Auksinę taisyklę: elkis taip, kaip norėtum, kad elgtųsi su tavimi!',
-      'Šypsena ir geri žodžiai atveria visas duris.',
-      'Pasirink vieną iš paruoštų klausimų apačioje arba įrašyk savo!'
-    ]
-  });
+  const [pendingQuestion, setPendingQuestion] = useState<string | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [lastFailedQuestion, setLastFailedQuestion] = useState<string | null>(null);
+  const [messages, setMessages] = useState<OwlMessage[]>([INITIAL_MESSAGE]);
+  const bottomRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (messages.length > 1 || loading) {
+      bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }, [messages, loading]);
 
   const handleAsk = async (queryText?: string) => {
-    const q = queryText || question;
-    if (!q.trim() || loading) return;
+    const q = (queryText ?? question).trim();
+    if (!q || loading) return;
 
     speech.stop();
     sounds.playPop();
     setLoading(true);
-    setQuestion('');
+    setErrorMsg(null);
+    setLastFailedQuestion(null);
+    setPendingQuestion(q);
+    if (!queryText) {
+      setQuestion('');
+    }
 
     try {
       const res = await fetch('/api/ask-owl', {
@@ -54,23 +75,35 @@ export const OwlAdvisor: React.FC<OwlAdvisorProps> = ({ onAddStars }) => {
         body: JSON.stringify({ question: q }),
       });
 
-      if (!res.ok) throw new Error('Klaida gaunant atsakymą');
-      const data = await res.json();
-      setResponse(data);
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.error || 'Nepavyko gauti pelėdos atsakymo.');
+      }
+
+      const answerText = typeof data.answer === 'string' && data.answer.trim()
+        ? data.answer
+        : 'Pelėda paruošė patarimą, bet tekstas buvo tuščias. Pabandyk paklausti dar kartą!';
+      const tipsList = Array.isArray(data.tips) ? data.tips : [];
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `msg_${Date.now()}`,
+          question: q,
+          answer: answerText,
+          tips: tipsList,
+        },
+      ]);
       sounds.playCorrect();
       onAddStars(5);
-    } catch (err) {
-      console.error(err);
-      setResponse({
-        answer: 'Svarbiausia bet kurioje situacijoje išlikti ramiam, pagarbiai išklausyti kitą žmogų ir nebijoti pasakyti „Prašau“, „Ačiū“ arba „Atsiprašau“!',
-        tips: [
-          'Pagalvok apie kito žmogaus jausmus prieš veikdamas.',
-          'Jei abejoji – mandagiai paklausk suaugusiojo patarimo.',
-          'Sąžiningumas ir geranoriškumas visada nugali!'
-        ]
-      });
+    } catch (err: unknown) {
+      console.error('Ask owl error:', err);
+      const msg = err instanceof Error ? err.message : 'Nepavyko susisiekti su pelėda. Patikrink interneto ryšį ir bandyk dar kartą.';
+      setErrorMsg(msg);
+      setLastFailedQuestion(q);
     } finally {
       setLoading(false);
+      setPendingQuestion(null);
     }
   };
 
@@ -105,49 +138,110 @@ export const OwlAdvisor: React.FC<OwlAdvisorProps> = ({ onAddStars }) => {
 
       {/* Main Chat/Response Box */}
       <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-md space-y-5">
-        {/* Owl Message Box */}
-        <div className="flex items-start gap-3.5">
-          <div className="w-10 h-10 rounded-2xl overflow-hidden border border-teal-300 shadow-xs shrink-0 bg-teal-100">
-            <img 
-              src="/images/owl_teacher.jpg" 
-              alt="Pelėdos avataras" 
-              referrerPolicy="no-referrer"
-              onError={(e) => {
-                (e.target as HTMLImageElement).src = '/src/assets/images/owl_teacher_1789803378582.jpg';
-              }}
-              className="w-full h-full object-cover"
-            />
-          </div>
-          <div className="space-y-3 flex-1">
-            <div className="p-4 sm:p-5 bg-teal-50/70 border border-teal-200/80 rounded-2xl text-slate-800 text-xs sm:text-sm leading-relaxed space-y-3">
-              {loading ? (
-                <div className="flex items-center gap-2 text-teal-800 py-3 font-medium">
-                  <Loader2 className="w-5 h-5 animate-spin text-teal-600" />
-                  <span>Pelėda varto etiketo knygą ir galvoja patarimą...</span>
+        {/* Conversation Messages */}
+        <div className="space-y-4 max-h-[460px] overflow-y-auto pr-1">
+          {messages.map((msg) => (
+            <div key={msg.id} className="space-y-3">
+              {msg.question && (
+                <div className="flex items-start justify-end gap-2.5">
+                  <div className="px-4 py-2.5 bg-indigo-600 text-white rounded-2xl rounded-tr-sm text-xs sm:text-sm font-medium max-w-[85%] shadow-xs">
+                    {msg.question}
+                  </div>
+                  <div className="w-8 h-8 rounded-xl bg-indigo-100 border border-indigo-200 flex items-center justify-center text-indigo-700 shrink-0">
+                    <User className="w-4 h-4" />
+                  </div>
                 </div>
-              ) : (
-                <>
-                    <p className="whitespace-pre-line flex-1">{response?.answer}</p>
-                  
-                  {response?.tips && response.tips.length > 0 && (
-                    <div className="pt-2 border-t border-teal-200/60 space-y-1.5">
-                      <span className="font-heading font-bold text-teal-950 text-xs block">
-                        ✨ 3 svarbiausi pelėdos žingsniai:
-                      </span>
-                      <ul className="space-y-1">
-                        {response.tips.map((tip, idx) => (
-                          <li key={idx} className="flex items-start gap-1.5 text-xs text-teal-900">
-                            <CheckCircle2 className="w-3.5 h-3.5 text-teal-600 shrink-0 mt-0.5" />
-                            <span>{tip}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                </>
+              )}
+
+              <div className="flex items-start gap-3.5">
+                <div className="w-10 h-10 rounded-2xl overflow-hidden border border-teal-300 shadow-xs shrink-0 bg-teal-100">
+                  <img 
+                    src="/images/owl_teacher.jpg" 
+                    alt="Pelėdos avataras" 
+                    referrerPolicy="no-referrer"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = '/src/assets/images/owl_teacher_1789803378582.jpg';
+                    }}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div className="space-y-3 flex-1 min-w-0">
+                  <div className="p-4 sm:p-5 bg-teal-50/70 border border-teal-200/80 rounded-2xl text-slate-800 text-xs sm:text-sm leading-relaxed space-y-3">
+                    <p className="whitespace-pre-line">{msg.answer}</p>
+
+                    {msg.tips && msg.tips.length > 0 && (
+                      <div className="pt-2 border-t border-teal-200/60 space-y-1.5">
+                        <span className="font-heading font-bold text-teal-950 text-xs block">
+                          ✨ Svarbiausi pelėdos žingsniai:
+                        </span>
+                        <ul className="space-y-1">
+                          {msg.tips.map((tip, idx) => (
+                            <li key={idx} className="flex items-start gap-1.5 text-xs text-teal-900">
+                              <CheckCircle2 className="w-3.5 h-3.5 text-teal-600 shrink-0 mt-0.5" />
+                              <span>{tip}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+
+          {loading && pendingQuestion && (
+            <div className="space-y-3">
+              <div className="flex items-start justify-end gap-2.5">
+                <div className="px-4 py-2.5 bg-indigo-600 text-white rounded-2xl rounded-tr-sm text-xs sm:text-sm font-medium max-w-[85%] shadow-xs">
+                  {pendingQuestion}
+                </div>
+                <div className="w-8 h-8 rounded-xl bg-indigo-100 border border-indigo-200 flex items-center justify-center text-indigo-700 shrink-0">
+                  <User className="w-4 h-4" />
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3.5">
+                <div className="w-10 h-10 rounded-2xl overflow-hidden border border-teal-300 shadow-xs shrink-0 bg-teal-100">
+                  <img 
+                    src="/images/owl_teacher.jpg" 
+                    alt="Pelėdos avataras" 
+                    referrerPolicy="no-referrer"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = '/src/assets/images/owl_teacher_1789803378582.jpg';
+                    }}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div className="p-4 sm:p-5 bg-teal-50/70 border border-teal-200/80 rounded-2xl flex-1">
+                  <div className="flex items-center gap-2 text-teal-800 py-1 font-medium text-xs sm:text-sm">
+                    <Loader2 className="w-5 h-5 animate-spin text-teal-600 shrink-0" />
+                    <span>Pelėda varto etiketo knygą ir galvoja patarimą...</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {errorMsg && (
+            <div className="p-4 bg-rose-50 border border-rose-200 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs sm:text-sm text-rose-900">
+              <div className="flex items-start gap-2.5">
+                <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                <span>{errorMsg}</span>
+              </div>
+              {lastFailedQuestion && (
+                <button
+                  type="button"
+                  onClick={() => handleAsk(lastFailedQuestion)}
+                  className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shrink-0 cursor-pointer transition-colors"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span>Bandyti dar kartą</span>
+                </button>
               )}
             </div>
-          </div>
+          )}
+          <div ref={bottomRef} />
         </div>
 
         {/* Input Bar */}
@@ -194,9 +288,10 @@ export const OwlAdvisor: React.FC<OwlAdvisorProps> = ({ onAddStars }) => {
               <button
                 key={idx}
                 id={`quick-prompt-${idx}`}
+                type="button"
                 disabled={loading}
                 onClick={() => handleAsk(prompt)}
-                className="px-3 py-1.5 bg-slate-100 hover:bg-teal-50 hover:text-teal-900 border border-slate-200 hover:border-teal-300 rounded-xl text-xs text-slate-700 text-left transition-colors cursor-pointer"
+                className="px-3 py-1.5 bg-slate-100 hover:bg-teal-50 hover:text-teal-900 border border-slate-200 hover:border-teal-300 rounded-xl text-xs text-slate-700 text-left transition-colors cursor-pointer disabled:opacity-50"
               >
                 💬 {prompt}
               </button>

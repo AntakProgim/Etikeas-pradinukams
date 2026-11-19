@@ -1,7 +1,7 @@
 import express from "express";
 import path from "path";
 import { createServer as createViteServer } from "vite";
-import { GoogleGenAI, GenerateVideosOperation } from "@google/genai";
+import { GoogleGenAI, Type, ThinkingLevel, GenerateVideosOperation } from "@google/genai";
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -35,21 +35,15 @@ app.get("/api/health", (_req, res) => {
 // AI Etiquette Owl helper endpoint
 app.post("/api/ask-owl", async (req, res) => {
   try {
-    const { question, category } = req.body;
-    if (!question || typeof question !== "string") {
-      return res.status(400).json({ error: "Trūksta klausimo teksto." });
+    const { question, category } = req.body || {};
+    if (!question || typeof question !== "string" || !question.trim()) {
+      return res.status(400).json({ error: "Prašome įrašyti klausimą pelėdai." });
     }
 
     const ai = getAIClient();
     if (!ai) {
-      // Friendly fallback if key is not configured
-      return res.json({
-        answer: "Atsimink pagrindinę auksinę etiketo taisyklę: elkis su kitais taip, kaip norėtum, kad su tavimi elgtųsi! Šypsena, žodžiai „ačiū“, „prašau“ ir pagarba visada atveria visas duris.",
-        tips: [
-          "Pagalvok, kaip tavo poelgis paveiks kitus žmones.",
-          "Jei nesi tikras, geriau mandagiai atsiklausti suaugusiojo.",
-          "Niekada nebijok pasakyti „Atsiprašau“, jei padarei klaidą."
-        ]
+      return res.status(503).json({
+        error: "Pelėdos išmanusis patarėjas šiuo metu nepasiekiamas, nes trūksta sukonfigūruoto DI ryšio."
       });
     }
 
@@ -63,49 +57,75 @@ Svarbiausios knygos taisyklės ir temos:
 5. Higiena ir tvarka: plauti rankas, čiaudėti į nosinaitę/alkūnę (ne į rankovę!), palikti švarų vonios kambarį, nuleisti tualeto dangtį, rengtis tvarkingai.
 6. Bendravimas: žiūrėti į akis, pasisveikinti, nepriekaištauti dėl keistumų, rašyti padėkos laiškelį.
 
-Atsakyk LIETUVIŲ KALBA, vaikiškai, aiškiai, šiltai ir padrąsinančiai (2–3 trumpos pastraipos).
-Taip pat pateik 2–3 konkrečius praktinius žingsnius („patarimus“).
-Formatas: Grąžink JSON formatu:
-{
-  "answer": "Paprastas, linksmas atsakymas vaikui...",
-  "tips": ["Pirmas patarimas", "Antras patarimas", "Trečias patarimas"]
-}`;
+Atsakyk tiksliai į konkretų vaiko klausimą LIETUVIŲ KALBA, vaikiškai, aiškiai, šiltai ir padrąsinančiai (2–3 trumpos pastraipos).
+Taip pat pateik 3 konkrečius praktinius žingsnius („tips“).`;
 
     const response = await ai.models.generateContent({
-      model: "gemini-3.8-flash",
-      contents: [
-        {
-          role: "user",
-          parts: [
-            { text: `${systemPrompt}\n\nVaiko klausimas (tema: ${category || 'Bendra'}): "${question}"` }
-          ]
-        }
-      ],
+      model: "gemini-3.1-flash-lite",
+      contents: `Vaiko klausimas (tema: ${category || 'Bendra'}): "${question.trim()}"`,
       config: {
+        systemInstruction: systemPrompt,
         responseMimeType: "application/json",
-        temperature: 0.7,
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            answer: {
+              type: Type.STRING,
+              description: "Šiltas, aiškus atsakymas pradinukui lietuvių kalba."
+            },
+            tips: {
+              type: Type.ARRAY,
+              items: { type: Type.STRING },
+              description: "2-3 konkretūs praktiniai patarimai vaikui."
+            }
+          },
+          required: ["answer", "tips"]
+        },
+        thinkingConfig: { thinkingLevel: ThinkingLevel.MINIMAL },
       }
     });
 
-    const responseText = response.text || "{}";
+    const rawText = (response.text ?? "").trim();
+    const cleanJson = rawText.replace(/^```json\s*/i, "").replace(/```$/i, "").trim();
+    if (!cleanJson) {
+      return res.status(502).json({ error: "Pelėda nespėjo suformuluoti atsakymo. Bandyk dar kartą!" });
+    }
+
     try {
-      const parsed = JSON.parse(responseText);
-      return res.json(parsed);
+      const parsed = JSON.parse(cleanJson);
+      return res.json({
+        answer: typeof parsed.answer === "string" && parsed.answer.trim() ? parsed.answer : cleanJson,
+        tips: Array.isArray(parsed.tips) ? parsed.tips.filter((t: unknown) => typeof t === "string") : []
+      });
     } catch {
       return res.json({
-        answer: responseText,
+        answer: cleanJson,
         tips: ["Būk mandagus ir atidus kitiems!", "Pasisveikink ir padėkok.", "Šypsena padeda visada!"]
       });
     }
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("AI Owl error:", error);
-    return res.json({
-      answer: "Mandagumas yra tarsi stebuklingas raktelis! Visada atsimink: pagarba draugams, tėvams ir mokytojams padaro tave tikru herojumi.",
-      tips: [
-        "Nepamiršk stebuklingų žodžių: ačiū, prašau, atsiprašau.",
-        "Išklausyk kitą iki galo nepertraukdamas.",
-        "Būk paslaugus ir atjaučiantis."
-      ]
+    const errObj = error as { status?: number; message?: string };
+    const status = errObj?.status;
+    const rawMsg = error instanceof Error ? error.message : String(error);
+    if (status === 429 || rawMsg.includes("429") || rawMsg.includes("RESOURCE_EXHAUSTED")) {
+      return res.status(429).json({
+        error: "Šiuo metu pelėda sulaukė labai daug klausimų (viršytas užklausų limitas). Luktelėk kelias sekundes ir pabandyk dar kartą!"
+      });
+    }
+    if (status === 403 || status === 401 || rawMsg.includes("403") || rawMsg.includes("PERMISSION_DENIED") || rawMsg.includes("API_KEY_INVALID") || rawMsg.includes("API key not valid")) {
+      return res.status(403).json({
+        error: "Nepavyko prisijungti prie pelėdos DI tarnybos (patikrinkite API rakto nustatymus)."
+      });
+    }
+    if (status === 404 || rawMsg.includes("404") || rawMsg.includes("NOT_FOUND")) {
+      return res.status(502).json({
+        error: "DI modelis laikinai nepasiekiamas (404)."
+      });
+    }
+    return res.status(500).json({
+      error: `Nepavyko gauti pelėdos atsakymo (${status || 'klaida'}). Pabandyk dar kartą!`,
+      details: rawMsg.slice(0, 200)
     });
   }
 });
@@ -237,15 +257,15 @@ Grąžink griežtai JSON formatu:
 }`;
 
     const response = await ai.models.generateContent({
-      model: "gemini-3.8-flash",
-      contents: [{ role: "user", parts: [{ text: prompt }] }],
+      model: "gemini-3.1-flash-lite",
+      contents: prompt,
       config: {
         responseMimeType: "application/json",
-        temperature: 0.7,
+        thinkingConfig: { thinkingLevel: ThinkingLevel.MINIMAL },
       }
     });
 
-    const responseText = response.text || "{}";
+    const responseText = (response.text || "{}").replace(/^```json\s*/i, "").replace(/```$/i, "").trim();
     const parsed = JSON.parse(responseText);
     return res.json(parsed);
   } catch (err) {
