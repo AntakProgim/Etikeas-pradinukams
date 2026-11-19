@@ -1,0 +1,6 @@
+{
+  "name": "Mandagaus elgesio mokyklėlė",
+  "description": "Žaisminga etiketo programėlė pradinukams pagal knygą „Good Manners for Today's Kids“ – testai, stalo serviravimo žaidimas, situacijos ir patarimai.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
