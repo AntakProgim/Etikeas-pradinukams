@@ -174,7 +174,7 @@ export const DAILY_MISSIONS: DailyMission[] = [
   {
     id: 'mission_fair_play_highfive',
     dayIndex: 10,
-    title: 'Garbingas žaidėjas (Fair play)',
+    title: 'Garbingas žaidėjas',
     category: 'sportas',
     categoryLabel: 'Sportas ir žaidimai',
     icon: '🤝',

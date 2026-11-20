@@ -59,8 +59,7 @@ export const GlossaryTipsView: React.FC<GlossaryTipsViewProps> = ({ onAddStars }
       t.definition.toLowerCase().includes(normalizedGlossaryQuery) ||
       t.example.toLowerCase().includes(normalizedGlossaryQuery) ||
       t.situation.toLowerCase().includes(normalizedGlossaryQuery) ||
-      t.categoryLabel.toLowerCase().includes(normalizedGlossaryQuery) ||
-      (t.englishOrigin || '').toLowerCase().includes(normalizedGlossaryQuery);
+      t.categoryLabel.toLowerCase().includes(normalizedGlossaryQuery);
     return matchesCat && matchesQuery;
   });
 
@@ -98,7 +97,7 @@ export const GlossaryTipsView: React.FC<GlossaryTipsViewProps> = ({ onAddStars }
             Etiketo žodynas ir dienos patarimai
           </h1>
           <p className="text-teal-100 text-xs sm:text-sm leading-relaxed">
-            Išmok svarbiausius terminus iš knygos „Good Manners for Today's Kids“ ir sužinok lengvai įgyvendinamus patarimus kiekvienai dienai!
+            Išmok svarbiausius terminus iš knygos „Etiketas šiandienos vaikams“ ir sužinok lengvai įgyvendinamus patarimus kiekvienai dienai!
           </p>
         </div>
 
@@ -263,11 +262,6 @@ export const GlossaryTipsView: React.FC<GlossaryTipsViewProps> = ({ onAddStars }
                         <h2 className="text-xl sm:text-2xl font-heading font-extrabold text-slate-900 pt-1">
                           {activeTerm.term}
                         </h2>
-                        {activeTerm.englishOrigin && (
-                          <p className="text-xs text-slate-400 font-mono">
-                            Knygoje: „{activeTerm.englishOrigin}“
-                          </p>
-                        )}
                       </div>
                     </div>
                   </div>

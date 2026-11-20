@@ -28,7 +28,7 @@ export const ANIMATION_CHARACTERS: AnimationCharacter[] = [
   {
     id: 'puppy',
     name: 'Šunelis Reksas',
-    role: 'Garbingas žaidėjas (Fair play)',
+    role: 'Garbingas žaidėjas',
     avatar: '🐶',
     personality: 'Moka džiaugtis draugų pergalėmis ir niekada nepyksta pralaimėjęs.',
     color: 'from-blue-400 to-indigo-500'
@@ -140,7 +140,7 @@ export const PRESET_ANIMATION_STORIES: AICharacterAnimationStory[] = [
         characterAction: 'Visi džiaugiasi, padeda sutvarkyti žaidimo lentą ir kartu juokiasi.',
         characterEmotion: 'proud',
         speechBubble: 'Laimėti smagu, bet žaisti kartu su gerais draugais – dar smagiau!',
-        etiquetteTip: 'Fair play taisyklė padaro tave visų laukiamu komandos nariu.',
+        etiquetteTip: 'Garbingo žaidimo taisyklė padaro tave visų laukiamu komandos nariu.',
         visualDescription: 'Reksas ir draugai kartu tvarkosi žaidimą ir planuoja naują partiją.',
         bgColor: 'from-purple-100 to-pink-100'
       }

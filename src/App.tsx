@@ -223,7 +223,7 @@ export default function App() {
           <span>„Elkis su kitais taip, kaip norėtum, kad kiti elgtųsi su tavimi.“</span>
         </div>
         <p className="text-slate-400 text-[11px]">
-          Sukurta remiantis Bob & Emilie Barnes knyga „Good Manners for Today's Kids“ (Etiketas šiandienos vaikams).
+          Sukurta remiantis Bobo ir Emilės Barns knyga „Etiketas šiandienos vaikams“.
         </p>
       </footer>
     </div>

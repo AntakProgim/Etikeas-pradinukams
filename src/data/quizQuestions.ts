@@ -6,7 +6,7 @@ export const QUIZ_QUESTIONS: QuizQuestion[] = [
     question: "Jei per šventę nesi tikras, kurį stalo įrankį paimti, geriausia stebėti šeimininką ar šeimininkę ir daryti kaip jie?",
     correctAnswer: true,
     category: "table",
-    explanation: "Teisingai! Stebėti šeimininkus („follow the leader“) yra puikus ir mandagus būdas nesuklysti.",
+    explanation: "Teisingai! Stebėti šeimininkus ir sekti jų pavyzdžiu yra puikus ir mandagus būdas nesuklysti.",
     hint: "Pagalvok, ar šeimininkai geriausiai žino savo vaišių tvarką."
   },
   {

@@ -51,7 +51,7 @@ export const SCENARIOS: Scenario[] = [
         text: 'Prieiti, nusišypsoti, pažvelgti į akis, aiškiai pasakyti: „Labas, Emilija, aš esu Austėja, malonu susipažinti!“ ir pristatyti ją draugams: „Susipažinkite, čia Emilija.“',
         isCorrect: true,
         feedback: 'Nuostabus pristatymas! Aiškus akių kontaktas, šypsena ir mandagus vardo ištarimas yra etiketo viršūnė.',
-        etiquetteLesson: 'Knygoje skyriuje „Happy to Meet You“ rašoma: prisistatant svarbiausia žiūrėti į akis, ištarti savo vardą ir pasakyti „Labai malonu susipažinti“.'
+        etiquetteLesson: 'Knygos skyriuje apie susipažinimą rašoma: prisistatant svarbiausia žiūrėti į akis, ištarti savo vardą ir pasakyti „Labai malonu susipažinti“.'
       },
       {
         text: 'Žiūrėti į grindis, bumbėti po nosimi ir laukti, kol kas nors kitas pradės pokalbį.',

@@ -108,7 +108,7 @@ export const HandbookView: React.FC<HandbookViewProps> = ({
             Pelėdos pamokos
           </h1>
           <p className="text-amber-100 text-xs sm:text-base leading-relaxed">
-            Išmok svarbiausių taisyklių iš knygos „Good Manners for Today's Kids“: pagarba draugams, stalo etiketas, švara, sąžiningas sportas ir mandagus bendravimas!
+            Išmok svarbiausių taisyklių iš knygos „Etiketas šiandienos vaikams“: pagarba draugams, stalo etiketas, švara, sąžiningas sportas ir mandagus bendravimas!
           </p>
 
           {/* Quick Search */}

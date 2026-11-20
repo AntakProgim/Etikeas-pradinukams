@@ -30,7 +30,7 @@ const ALL_ACHIEVEMENTS: Achievement[] = [
   },
   {
     id: 'sportsmanship_badge',
-    title: 'Garbingas žaidėjas (Fair play)',
+    title: 'Garbingas žaidėjas',
     description: 'Išmoktos garbingo sporto, pergalės ir pralaimėjimo taisyklės.',
     icon: '⚽',
     category: 'Sportas',

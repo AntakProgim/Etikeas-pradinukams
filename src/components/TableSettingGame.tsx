@@ -293,7 +293,7 @@ export const TableSettingGame: React.FC<TableSettingGameProps> = ({ onAddStars, 
             🍽️ Padenk stalą taisyklingai!
           </h1>
           <p className="text-blue-100 text-xs sm:text-sm">
-            Pagal knygą „Good Manners for Today's Kids“ (Setting a Table 101). 
+            Pagal knygą „Etiketas šiandienos vaikams“. 
             Pasirink įrankį apačioje ir padėk jį į teisingą stalo vietą!
           </p>
         </div>

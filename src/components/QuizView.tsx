@@ -159,7 +159,7 @@ export const QuizView: React.FC<QuizViewProps> = ({ onAddStars, onUnlockBadge, o
           {/* Book Evaluation Scale Reference */}
           <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 text-left text-xs space-y-2 text-slate-600">
             <h4 className="font-bold text-slate-800 flex items-center gap-1.5">
-              <span>📖 Knygos „Good Manners for Today's Kids“ vertinimo skalė:</span>
+              <span>📖 Knygos „Etiketas šiandienos vaikams“ vertinimo skalė:</span>
             </h4>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 pt-1">
               <div className={`p-2 rounded-lg ${finalScore >= 19 ? 'bg-amber-100 font-bold text-amber-900' : ''}`}>

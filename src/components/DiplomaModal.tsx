@@ -156,7 +156,7 @@ export const DiplomaModal: React.FC<DiplomaModalProps> = ({
     ctx.fillStyle = '#B45309';
     ctx.font = '600 22px "Plus Jakarta Sans", Arial, sans-serif';
     ctx.fillText(
-      'Pagal Bob & Emilie Barnes knygą „Good Manners for Today\'s Kids“',
+      'Pagal Bobo ir Emilės Barns knygą „Etiketas šiandienos vaikams“',
       width / 2,
       380
     );
@@ -414,7 +414,7 @@ export const DiplomaModal: React.FC<DiplomaModalProps> = ({
               ETIKETO DIPLOMAS
             </h1>
             <p className="text-xs text-amber-700 font-medium">
-              Pagal Bob & Emilie Barnes knygą „Good Manners for Today's Kids“
+              Pagal Bobo ir Emilės Barns knygą „Etiketas šiandienos vaikams“
             </p>
           </div>
 

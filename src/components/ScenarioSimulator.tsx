@@ -116,7 +116,7 @@ export const ScenarioSimulator: React.FC<ScenarioSimulatorProps> = ({
             Ką darytum tu?
           </h1>
           <p className="text-emerald-100 text-xs sm:text-sm max-w-lg">
-            Spręsk keblius socialinius nutikimus pagal knygą „Good Manners for Today's Kids“: vakarienė su šeimininkais, viešas prisistatymas, pagarba privatumui ir garbingas žaidimas.
+            Spręsk keblius socialinius nutikimus pagal knygą „Etiketas šiandienos vaikams“: vakarienė su šeimininkais, viešas prisistatymas, pagarba privatumui ir garbingas žaidimas.
           </p>
         </div>
 

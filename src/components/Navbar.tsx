@@ -112,7 +112,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </span>
               </div>
               <p className="text-[11px] text-slate-500 font-medium hidden sm:block">
-                Pagal Bob ir Emilie Barnes knygą „Good Manners for Today's Kids“
+                Pagal Bobo ir Emilės Barns knygą „Etiketas šiandienos vaikams“
               </p>
             </div>
           </div>

@@ -349,7 +349,7 @@ export const THEMED_QUIZZES: ThemedQuiz[] = [
     category: 'Svetingumas ir svečiai',
     questions: [
       {
-        question: 'Ką vadiname „šeimininkės dovana“ (hostess gift)?',
+        question: 'Ką vadiname „šeimininkės dovana“?',
         options: [
           'Brangų brangakmenį',
           'Mažą nuoširdžią dovanėlę, gėlę ar skanėstą namų šeimininkams',
@@ -448,14 +448,14 @@ export const THEMED_QUIZZES: ThemedQuiz[] = [
         explanation: 'Mokėjimas oriai pralaimėti yra brandaus žmogaus bruožas – stalo žaidimai skirti smagumui!'
       },
       {
-        question: 'Ką reiškia sąvoka „Fair Play“ (garbingas žaidimas)?',
+        question: 'Ką reiškia garbingas žaidimas sporte?',
         options: [
           'Žaidimas, kuriame laimi bet kokiomis priemonėmis',
           'Taisyklių laikymasis, pagarba varžovui, teisėjams ir savo komandos draugams',
           'Tik žaidimas lauke saulėtą dieną'
         ],
         correctIndex: 1,
-        explanation: 'Fair Play yra tarptautinis principas, reiškiantis sąžiningumą, pagarbą ir lygybę sporte.'
+        explanation: 'Garbingas žaidimas – tai principas, reiškiantis sąžiningumą, pagarbą ir lygybę sporte.'
       }
     ]
   },
